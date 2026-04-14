@@ -1,0 +1,23 @@
+[package]
+name = "apple-calendar-desktop"
+version = "0.1.0"
+description = "A personal Windows desktop wrapper for Apple Calendar"
+authors = ["Codex"]
+edition = "2021"
+
+[lib]
+name = "apple_calendar_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-window-state = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

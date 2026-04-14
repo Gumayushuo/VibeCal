@@ -1,0 +1,15 @@
+{
+  "name": "apple-calendar-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A personal Windows 11 desktop wrapper for Apple Calendar built with Tauri 2.",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
