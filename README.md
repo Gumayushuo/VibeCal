@@ -16,27 +16,6 @@ This project keeps the Apple Calendar web experience intact and adds desktop-foc
 - Optional desktop layer mode that can sit behind fullscreen apps
 - No extra console window when launching the app directly
 
-## Privacy And Local State
-
-This repository does not store or ship your Apple account session.
-
-Runtime state is stored on each local machine, outside the repository:
-
-- Session and WebView data: `%LOCALAPPDATA%\\com.local.applecalendardesktop\\webview`
-- Local app preferences: `%LOCALAPPDATA%\\com.local.applecalendardesktop\\settings.json`
-- Auto start entry: `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Apple Calendar Desktop`
-
-That means:
-
-- Cloning this repository on another machine will not sign the other user into your Apple account.
-- Uploading this repository to GitHub will not upload your Apple login state as long as ignored files stay untracked.
-
-If you want to clear your own local session and auto start entry, run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\reset-local-state.ps1
-```
-
 ## Requirements
 
 - Windows 11
