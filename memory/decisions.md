@@ -68,3 +68,11 @@
 - Repository publication should not include runtime session state because Apple login data is stored in `%LOCALAPPDATA%\com.local.applecalendardesktop`, not inside the repository.
 - Windows auto start for this app is represented by a user-level registry entry under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\Apple Calendar Desktop`.
 - The repository should include an explicit local reset script and README guidance so users can clear machine-specific state without guessing which directory or registry value to remove.
+
+### Public Branding
+- The public project name is renamed to `VibeCal`.
+- The public codename and package naming should use `vibecal` rather than `apple-calendar-desktop`.
+- Public-facing naming should describe Apple Calendar compatibility without presenting the project as an Apple product.
+- The app should include an explicit disclaimer that it is unofficial and not affiliated with, sponsored by, or endorsed by Apple.
+- The app identifier should be neutral and use `com.vibecal.desktop`.
+- The renamed build should attempt to migrate legacy local state from `com.local.applecalendardesktop` so the existing personal user does not lose their signed-in session during the rebrand.

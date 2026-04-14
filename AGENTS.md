@@ -1,7 +1,7 @@
-# Apple Calendar Desktop
+# VibeCal
 
 ## Purpose
-- Build a personal-use Windows 11 desktop client that provides fast access to Apple Calendar with a stable signed-in experience.
+- Build VibeCal, a personal-use Windows 11 desktop client that provides fast access to Apple Calendar with a stable signed-in experience.
 - Prioritize a wrapper-based desktop experience over rebuilding calendar functionality.
 
 ## Project Scope

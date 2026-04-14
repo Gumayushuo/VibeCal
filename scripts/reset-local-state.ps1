@@ -3,41 +3,58 @@ param()
 
 $ErrorActionPreference = "Stop"
 
-$AppId = "com.local.applecalendardesktop"
-$AppName = "Apple Calendar Desktop"
-$LocalDataPath = Join-Path $env:LOCALAPPDATA $AppId
+$AppEntries = @(
+    @{
+        AppId = "com.vibecal.desktop"
+        AppName = "VibeCal"
+        ProcessPattern = "*vibecal.exe"
+    },
+    @{
+        AppId = "com.local.applecalendardesktop"
+        AppName = "Apple Calendar Desktop"
+        ProcessPattern = "*apple-calendar-desktop.exe"
+    }
+)
+
 $RunKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 
-Write-Host "Resetting local state for $AppName..."
+Write-Host "Resetting local state for VibeCal..."
 
-$runningProcesses = Get-Process -ErrorAction SilentlyContinue | Where-Object {
-    try {
-        $_.Path -like "*apple-calendar-desktop.exe"
-    } catch {
-        $false
+$runningProcesses = @()
+foreach ($entry in $AppEntries) {
+    $runningProcesses += Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        try {
+            $_.Path -like $entry.ProcessPattern
+        } catch {
+            $false
+        }
     }
 }
 
-if ($runningProcesses) {
-    throw "Close Apple Calendar Desktop before running this script."
+if ($runningProcesses | Select-Object -First 1) {
+    throw "Close VibeCal and any legacy Apple Calendar Desktop builds before running this script."
 }
 
-if (Test-Path -LiteralPath $LocalDataPath) {
-    if ($PSCmdlet.ShouldProcess($LocalDataPath, "Remove local app data")) {
-        Remove-Item -LiteralPath $LocalDataPath -Recurse -Force
-        Write-Host "Removed local data: $LocalDataPath"
-    }
-} else {
-    Write-Host "Local data path not found: $LocalDataPath"
-}
+foreach ($entry in $AppEntries) {
+    $localDataPath = Join-Path $env:LOCALAPPDATA $entry.AppId
 
-if (Get-ItemProperty -Path $RunKeyPath -Name $AppName -ErrorAction SilentlyContinue) {
-    if ($PSCmdlet.ShouldProcess($RunKeyPath, "Remove auto start entry")) {
-        Remove-ItemProperty -Path $RunKeyPath -Name $AppName
-        Write-Host "Removed auto start entry: $AppName"
+    if (Test-Path -LiteralPath $localDataPath) {
+        if ($PSCmdlet.ShouldProcess($localDataPath, "Remove local app data")) {
+            Remove-Item -LiteralPath $localDataPath -Recurse -Force
+            Write-Host "Removed local data: $localDataPath"
+        }
+    } else {
+        Write-Host "Local data path not found: $localDataPath"
     }
-} else {
-    Write-Host "Auto start entry not found: $AppName"
+
+    if (Get-ItemProperty -Path $RunKeyPath -Name $entry.AppName -ErrorAction SilentlyContinue) {
+        if ($PSCmdlet.ShouldProcess($RunKeyPath, "Remove auto start entry")) {
+            Remove-ItemProperty -Path $RunKeyPath -Name $entry.AppName
+            Write-Host "Removed auto start entry: $($entry.AppName)"
+        }
+    } else {
+        Write-Host "Auto start entry not found: $($entry.AppName)"
+    }
 }
 
 Write-Host "Reset complete."

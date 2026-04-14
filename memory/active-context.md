@@ -1,11 +1,11 @@
 # Active Context
 
 ## Current Phase
-- The personal-use v1 desktop client is complete for the current scope and the repository is now cleaned up for GitHub publication.
+- The personal-use v1 desktop client is complete for the current scope, and the safer public VibeCal rebrand is finished.
 
 ## Project Snapshot
-- Project name: Apple Calendar Desktop
-- Internal codename: apple-calendar-desktop
+- Project name: VibeCal
+- Internal codename: vibecal
 - Product direction: desktop wrapper around Apple Calendar web experience
 - Primary user: single personal Windows 11 user
 - Preferred stack: Tauri + WebView2
@@ -38,9 +38,12 @@
 - Both debug and release Windows executables are now built as GUI-subsystem binaries, so launching them directly does not spawn an extra console window.
 - The repository now includes a reset script for clearing local runtime state and a public-facing README that explains where session data and autostart entries live on Windows.
 - An initial local Git repository has been created on the `main` branch, and the publishable working tree excludes ignored caches, bootstrap leftovers, `node_modules`, and build output.
+- The public-facing brand is being changed to `VibeCal`, with a neutral app identifier and explicit unofficial Apple compatibility disclaimers.
+- The renamed app now attempts a one-time migration from the legacy `com.local.applecalendardesktop` local data directory into the new `com.vibecal.desktop` directory.
+- The renamed Rust/Tauri workspace compiles successfully as `vibecal`.
 
 ## Current Blockers
 - No functional blockers remain for the current personal-use v1 target.
 
 ## Immediate Next Step
-- Optional future work: add a license, create the first commit, and publish to GitHub.
+- Optional future work: add a license, create the first public-facing commit, and publish the VibeCal repository to GitHub.

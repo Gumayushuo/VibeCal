@@ -1,6 +1,6 @@
 use std::{
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -20,7 +20,8 @@ use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_window_state::{AppHandleExt as WindowStateAppHandleExt, StateFlags, WindowExt as WindowStateWindowExt};
 
-const APP_TITLE: &str = "Apple Calendar Desktop";
+const APP_TITLE: &str = "VibeCal";
+const LEGACY_APP_ID: &str = "com.local.applecalendardesktop";
 const ICLOUD_GLOBAL_URL: &str = "https://www.icloud.com/calendar/";
 const ICLOUD_CHINA_URL: &str = "https://www.icloud.com.cn/calendar/";
 
@@ -57,6 +58,10 @@ fn is_desktop_mode(app: &AppHandle) -> bool {
 
 fn app_data_dir(app: &AppHandle) -> Option<PathBuf> {
     app.path().app_local_data_dir().ok()
+}
+
+fn legacy_app_data_dir(app: &AppHandle) -> Option<PathBuf> {
+    app.path().local_data_dir().ok().map(|dir| dir.join(LEGACY_APP_ID))
 }
 
 fn preferences_path(app: &AppHandle) -> Option<PathBuf> {
@@ -110,6 +115,54 @@ fn persist_preferences(app: &AppHandle) {
 
 fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
     haystack.windows(needle.len()).any(|window| window == needle)
+}
+
+fn copy_dir_recursive(source: &Path, destination: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(destination)?;
+
+    for entry in fs::read_dir(source)? {
+        let entry = entry?;
+        let source_path = entry.path();
+        let destination_path = destination.join(entry.file_name());
+        let file_type = entry.file_type()?;
+
+        if file_type.is_dir() {
+            copy_dir_recursive(&source_path, &destination_path)?;
+        } else if file_type.is_file() {
+            fs::copy(source_path, destination_path)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn migrate_legacy_local_state(app: &AppHandle) {
+    let Some(current_dir) = app_data_dir(app) else {
+        return;
+    };
+
+    if current_dir.exists() {
+        return;
+    }
+
+    let Some(legacy_dir) = legacy_app_data_dir(app) else {
+        return;
+    };
+
+    if !legacy_dir.exists() {
+        return;
+    }
+
+    if let Some(parent) = current_dir.parent() {
+        if let Err(error) = fs::create_dir_all(parent) {
+            eprintln!("failed to prepare current app data directory: {error}");
+            return;
+        }
+    }
+
+    if let Err(error) = copy_dir_recursive(&legacy_dir, &current_dir) {
+        eprintln!("failed to migrate legacy local state: {error}");
+    }
 }
 
 fn detect_calendar_url(app: &AppHandle) -> &'static str {
@@ -388,6 +441,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let app_handle = app.handle().clone();
+            migrate_legacy_local_state(&app_handle);
             let state = Arc::new(AppState::new(load_preferences(&app_handle)));
 
             app.manage::<SharedState>(state);

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Apple Calendar Desktop",
+  "productName": "VibeCal",
   "version": "0.1.0",
-  "identifier": "com.local.applecalendardesktop",
+  "identifier": "com.vibecal.desktop",
   "build": {
     "devUrl": "https://www.icloud.com/calendar/",
     "frontendDist": "https://www.icloud.com/calendar/"

@@ -1,12 +1,12 @@
 [package]
-name = "apple-calendar-desktop"
+name = "vibecal"
 version = "0.1.0"
-description = "A personal Windows desktop wrapper for Apple Calendar"
+description = "An unofficial Windows desktop wrapper compatible with Apple Calendar"
 authors = ["Codex"]
 edition = "2021"
 
 [lib]
-name = "apple_calendar_desktop_lib"
+name = "vibecal_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

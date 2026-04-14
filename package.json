@@ -1,8 +1,8 @@
 {
-  "name": "apple-calendar-desktop",
+  "name": "vibecal",
   "private": true,
   "version": "0.1.0",
-  "description": "A personal Windows 11 desktop wrapper for Apple Calendar built with Tauri 2.",
+  "description": "An unofficial Windows 11 desktop wrapper compatible with Apple Calendar.",
   "type": "module",
   "scripts": {
     "dev": "tauri dev",

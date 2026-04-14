@@ -27,6 +27,7 @@
 - Generated repository content should remain in English.
 - User-facing chat and explanations should remain in Chinese.
 - External Apple login and web behavior may limit implementation details.
+- Public-facing naming and branding should not imply affiliation with Apple.
 
 ## Risks And Unknowns
 - Embedded Apple sign-in may be blocked or unstable.
