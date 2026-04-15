@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.vibecal.desktop",
   "build": {
-    "devUrl": "https://www.icloud.com/calendar/",
-    "frontendDist": "https://www.icloud.com/calendar/"
+    "devUrl": "https://www.icloud.com.cn/calendar/",
+    "frontendDist": "https://www.icloud.com.cn/calendar/"
   },
   "app": {
     "withGlobalTauri": false,

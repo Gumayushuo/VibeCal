@@ -1,7 +1,7 @@
 # Active Context
 
 ## Current Phase
-- The personal-use v1 desktop client is complete for the current scope, and the safer public VibeCal rebrand is finished.
+- The personal-use desktop client has been redirected back to a pure multi-window workspace after the dashboard-shell experiment failed the user's UX bar.
 
 ## Project Snapshot
 - Project name: VibeCal
@@ -19,13 +19,20 @@
 - Single instance behavior
 - Windows native notifications
 - Easy desktop or taskbar pinning
+- Calendar and Reminders visible at the same time
+- Calendar, Reminders, and Notes visible as independent windows
+- No forced docking, panel ratios, or dashboard chrome
+- Free manual resizing and moving for each regular window
+- Per-window always-on-top mode in addition to per-window desktop-layer mode
+- Calendar-only default startup on a fresh setup
+- Window visibility remembered across launches
 
 ## Key Constraint
 - Apple sign-in and web compatibility are external dependencies. If Apple changes login or embedding behavior, the client may require adjustment.
 
 ## Current Implementation Snapshot
-- The app now uses a Tauri-managed external WebView aimed at `https://www.icloud.com/calendar/`.
-- Desktop behaviors are wired from Rust, not from a custom frontend shell.
+- The app now uses three top-level Tauri webview windows again: Calendar, Reminders, and Notes.
+- Desktop behaviors are wired from Rust without a local dashboard frontend.
 - Session persistence is currently designed around a dedicated WebView data directory.
 - Tray, single-instance behavior, autostart wiring, window-state restore, and shell-level notifications are included in the first skeleton.
 - The system Rust MSVC toolchain and Visual Studio Build Tools are now installed and recognized by `tauri info`.
@@ -41,9 +48,23 @@
 - The public-facing brand is being changed to `VibeCal`, with a neutral app identifier and explicit unofficial Apple compatibility disclaimers.
 - The renamed app now attempts a one-time migration from the legacy `com.local.applecalendardesktop` local data directory into the new `com.vibecal.desktop` directory.
 - The renamed Rust/Tauri workspace compiles successfully as `vibecal`.
+- Calendar, Reminders, and Notes now share one persisted WebView profile while remaining independent windows.
+- Default URL fallback now prefers the China iCloud domain when there is no existing cookie signal pointing to the global domain.
+- The experimental local `Today Board` widget surface has already been removed.
+- The dashboard-shell experiment has been removed from the repo along with the local `dashboard/` frontend.
+- The current implementation now opens Calendar, Reminders, and Notes as separate windows and leaves size and position entirely under user control.
+- Tray controls are now split per window, so Calendar, Reminders, and Notes can each independently toggle `Pin to Desktop Layer` and `Always On Top`.
+- Window snapping has been removed again because it made manual adjustment feel worse instead of better.
+- Workspace visibility is now persisted per window so reopened sessions match the user's last chosen page set instead of reopening everything.
+- Fresh setups still default to Calendar only, but once the local visibility fields exist the app follows the remembered workspace exactly, including tray-only launches with no content window visible.
+- Desktop-layer mode has been restored to the older stable implementation: chrome-free, fixed, skip-taskbar, and bottom-layer behavior without desktop-host reparenting.
+- Window initialization has been deferred onto the main thread because direct window creation inside `setup` triggered a Windows `os error 183` crash path during validation.
+- The window show path now applies pinned mode before showing the window so startup no longer flashes a normal top-level window and then appears to lose it.
+- Release builds and installer output compile successfully for the reverted multi-window architecture.
 
 ## Current Blockers
-- No functional blockers remain for the current personal-use v1 target.
+- No build blocker remains for the multi-window direction.
+- Runtime UX validation is still needed to confirm that the restored stable desktop-layer behavior matches the older preferred experience and that remembered visibility now tracks the last workspace exactly.
 
 ## Immediate Next Step
-- Optional future work: add a license, create the first public-facing commit, and publish the VibeCal repository to GitHub.
+- User validation should confirm that `Pin to Desktop Layer` once again behaves like the older stable version, and that reopening the app restores exactly the last chosen visible window set.

@@ -2,7 +2,7 @@
 
 VibeCal is an unofficial Windows 11 desktop wrapper compatible with Apple Calendar, built with Tauri 2 and WebView2.
 
-It keeps the Apple Calendar web experience intact and adds desktop-focused behavior such as tray support, single-instance launching, auto start, window state restore, and an optional desktop layer mode.
+It keeps Apple-owned web content intact and wraps it in independent desktop windows with tray support, single-instance launching, auto start, window state restore, and optional pinning modes.
 
 ## Disclaimer
 
@@ -12,14 +12,20 @@ It keeps the Apple Calendar web experience intact and adds desktop-focused behav
 
 ## Features
 
-- Direct Apple Calendar window on Windows 11
+- Independent Calendar, Reminders, and Notes windows
+- Shared WebView2 session profile across all three windows
+- Free manual moving and resizing for each regular window without enforced docking or panel ratios
+- Per-window `Pin to Desktop Layer` and `Always On Top` controls from the tray menu
+- Window visibility is remembered across launches
 - Persistent WebView2 session data across launches
 - Window size, position, and state restore
 - Hide to tray on close
 - Single-instance behavior
 - Auto start support
 - Native Windows notification plumbing
-- Optional desktop layer mode that can sit behind fullscreen apps
+- Default fallback to the China iCloud domain when no previous cookie domain is known
+- Optional desktop layer mode per window
+- Optional always-on-top mode per window
 - No extra console window when launching the app directly
 
 ## Privacy And Local State
@@ -81,12 +87,19 @@ npm run build
 - `memory/` and `AGENTS.md` keep project context for Codex-assisted iteration.
 - `scripts/reset-local-state.ps1` removes current and legacy local runtime data from `%LOCALAPPDATA%` and clears the corresponding Windows auto start entries.
 - `node_modules`, build outputs, bootstrap caches, and temporary toolchain folders are ignored and should not be committed.
+- The app now defaults to Calendar only unless the user explicitly opens Reminders or Notes.
+- The windows share one persisted WebView profile but do not force-follow each other for size or position.
+- Tray submenus let you independently show, hide, pin, and top-pin each window.
+- Closing or hiding a window updates the remembered workspace, so the next launch restores the last page set instead of always reopening every page.
+- On a fresh setup, only Calendar is visible by default; after that, relaunch follows the last remembered window set exactly.
+- Desktop-layer mode intentionally changes the pinned window into a chrome-free fixed surface, while regular mode keeps full free resize and movement.
 
 ## Known Constraints
 
 - Apple sign-in and Apple web compatibility are external dependencies.
 - Apple may change login, cookie, or embedded web behavior in ways that require app updates.
-- Native reminder parity depends on what Apple exposes inside the WebView-based experience.
+- Reminders and Notes are still rendered from Apple web pages rather than a custom local data layer.
+- This project intentionally avoids reconstructing Apple data as fake local widgets and instead keeps the real Apple web pages visible in independent windows.
 
 ## License
 

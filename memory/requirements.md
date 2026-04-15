@@ -20,6 +20,14 @@
 - Prevent multiple active instances.
 - Support Windows native notifications.
 - Fit normal Windows 11 usage patterns, including pinning to taskbar or desktop shortcuts.
+- Support separate Calendar, Reminders, and Notes windows that can all stay open at the same time.
+- Keep regular Calendar, Reminders, and Notes windows fully movable and resizable by the user without enforced docking or ratio logic.
+- Provide a persistent desktop-layer mode that can be toggled independently for each window.
+- Provide a persistent always-on-top mode that can be toggled independently for each window.
+- Default to opening Calendar only on a fresh setup.
+- Remember which windows were visible or closed so the next launch restores the user's last workspace state exactly.
+- Treat recurring items inside a dedicated `Habits` reminders list as the first implementation path for daily habits.
+- Prefer the China iCloud domain by default when no existing cookie domain is detected.
 
 ## Constraints
 - Windows 11 only.
@@ -34,6 +42,9 @@
 - Session persistence behavior may differ across WebView and browser-assisted flows.
 - Notification support may depend on how the wrapper integrates with Windows APIs and the web content.
 - Browser-assisted login should not be assumed to hydrate the app's WebView session automatically.
+- Apple data should not be assumed to be safely available to custom local widgets without additional integration work.
+- A fake local dashboard shell may look polished but can still feel worse than separate real Apple pages if interaction fidelity drops.
+- Desktop-layer behavior depends on Windows shell internals and may require adjustment across Windows updates.
 
 ## Definition Of Done
 - On Windows 11, the user can launch the app and reach Apple Calendar with a durable signed-in experience as the primary target.
