@@ -55,12 +55,26 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value $releaseBody
           Add-Content -Path $env:GITHUB_OUTPUT -Value "EOF"
 
+      - name: Normalize updater signing secrets
+        shell: pwsh
+        env:
+          RAW_TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          RAW_TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          $privateKey = $env:RAW_TAURI_SIGNING_PRIVATE_KEY.Trim()
+          $password = $env:RAW_TAURI_SIGNING_PRIVATE_KEY_PASSWORD.Trim()
+
+          Add-Content -Path $env:GITHUB_ENV -Value "TAURI_SIGNING_PRIVATE_KEY<<EOF"
+          Add-Content -Path $env:GITHUB_ENV -Value $privateKey
+          Add-Content -Path $env:GITHUB_ENV -Value "EOF"
+          Add-Content -Path $env:GITHUB_ENV -Value "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$password"
+
       - name: Build and publish Tauri release
         uses: tauri-apps/tauri-action@action-v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ env.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: .
           tagName: ${{ steps.release_meta.outputs.tag }}
