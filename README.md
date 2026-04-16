@@ -24,6 +24,7 @@ It keeps Apple-owned web content intact and wraps it in independent desktop wind
 - Auto start support
 - Native Windows notification plumbing
 - Tray action to print the current Calendar view through Apple's web print flow
+- Automatic update checks on startup, with in-app update notes and installation prompts
 - Default fallback to the China iCloud domain when no previous cookie domain is known
 - Optional desktop layer mode per window
 - Optional always-on-top mode per window
@@ -82,16 +83,44 @@ Build a release bundle:
 npm run build
 ```
 
+Build a signed updater bundle locally:
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content C:\path\to\vibecal.key -Raw
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "your-password"
+npm run build
+```
+
+## Auto Updates
+
+VibeCal uses the Tauri updater plugin with a GitHub Releases `latest.json` endpoint.
+
+Client behavior:
+
+- The app checks for updates on startup.
+- The tray menu includes a manual update-check action.
+- When a newer release exists, the app shows the release notes and asks whether to download and install it.
+
+Release setup:
+
+1. Generate an updater signing key with `npm run tauri signer generate -- --ci -w <path-to-private-key>`.
+2. Add `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` to your GitHub repository secrets.
+3. Push a version tag such as `v0.3.0`.
+4. GitHub Actions builds the Windows installer, updater artifacts, signatures, and publishes them to the matching release.
+
 ## Repository Notes
 
 - `src-tauri/` contains the Rust and Tauri application.
 - `memory/` and `AGENTS.md` keep project context for Codex-assisted iteration.
+- `.github/workflows/publish.yml` builds and publishes signed update artifacts to GitHub Releases when you push a version tag.
 - `scripts/reset-local-state.ps1` removes current and legacy local runtime data from `%LOCALAPPDATA%` and clears the corresponding Windows auto start entries.
+- `scripts/get-release-notes.ps1` extracts the current version section from `CHANGELOG.md` for release publishing.
 - `node_modules`, build outputs, bootstrap caches, and temporary toolchain folders are ignored and should not be committed.
 - The app now defaults to Calendar only unless the user explicitly opens Reminders or Notes.
 - The windows share one persisted WebView profile but do not force-follow each other for size or position.
 - Tray submenus let you independently show, hide, pin, and top-pin each window.
 - The tray menu now includes `Print Calendar...`, which opens the current Apple Calendar print dialog for the Calendar window.
+- The tray menu also includes a manual update-check action, and the update prompt shows the release notes supplied by the updater feed.
 - Closing or hiding a window updates the remembered workspace, so the next launch restores the last page set instead of always reopening every page.
 - On a fresh setup, only Calendar is visible by default; after that, relaunch follows the last remembered window set exactly.
 - Desktop-layer mode intentionally changes the pinned window into a chrome-free fixed surface, while regular mode keeps full free resize and movement.

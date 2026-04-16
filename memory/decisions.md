@@ -165,3 +165,11 @@
 
 ### UI Language
 - The tray-menu control surface and window titles should use Chinese labels because the user's primary operating language for day-to-day app controls is Chinese.
+
+### Auto Updates
+- The Windows app should use Tauri's signed updater flow against the project's GitHub Releases `latest.json` endpoint.
+- The app should check for updates automatically on startup and also expose a manual tray-level update-check action.
+- The update prompt should display the updater `body` field as release notes before the user chooses whether to install.
+
+### Release Version
+- The first release that includes signed auto-update support is version `0.3.0`.

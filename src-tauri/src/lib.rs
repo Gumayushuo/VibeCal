@@ -16,8 +16,10 @@ use tauri::{
     AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent,
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt as AutostartManagerExt};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
+use tauri_plugin_updater::{Update, UpdaterExt};
 use tauri_plugin_window_state::{
     AppHandleExt as WindowStateAppHandleExt, StateFlags, WindowExt as WindowStateWindowExt,
 };
@@ -33,6 +35,8 @@ const LEGACY_APP_ID: &str = "com.local.applecalendardesktop";
 const CALENDAR_WINDOW_LABEL: &str = "calendar";
 const REMINDERS_WINDOW_LABEL: &str = "reminders";
 const NOTES_WINDOW_LABEL: &str = "notes";
+const UPDATE_ENDPOINT: &str =
+    "https://github.com/Gumayushuo/VibeCal/releases/latest/download/latest.json";
 
 const ICLOUD_GLOBAL_CALENDAR_URL: &str = "https://www.icloud.com/calendar/";
 const ICLOUD_CHINA_CALENDAR_URL: &str = "https://www.icloud.com.cn/calendar/";
@@ -138,6 +142,7 @@ impl AppPreferences {
 #[derive(Debug)]
 struct AppState {
     quitting: AtomicBool,
+    checking_updates: AtomicBool,
     preferences: Mutex<AppPreferences>,
 }
 
@@ -145,6 +150,7 @@ impl AppState {
     fn new(preferences: AppPreferences) -> Self {
         Self {
             quitting: AtomicBool::new(false),
+            checking_updates: AtomicBool::new(false),
             preferences: Mutex::new(preferences.normalized()),
         }
     }
@@ -641,6 +647,136 @@ fn show_shell_notification(app: &AppHandle, title: &str, body: &str) {
     }
 }
 
+fn update_notes(update: &Update) -> String {
+    update
+        .body
+        .as_deref()
+        .map(str::trim)
+        .filter(|notes| !notes.is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| "此版本没有附带更新说明。".to_string())
+}
+
+fn update_dialog_message(update: &Update) -> String {
+    format!(
+        "发现新版本 v{}（当前版本 v{}）。\n\n更新内容：\n{}\n\n是否现在下载安装？",
+        update.version,
+        update.current_version,
+        update_notes(update)
+    )
+}
+
+fn begin_update_check(app: &AppHandle) -> bool {
+    app_state(app)
+        .checking_updates
+        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
+        .is_ok()
+}
+
+fn finish_update_check(app: &AppHandle) {
+    app_state(app)
+        .checking_updates
+        .store(false, Ordering::Release);
+}
+
+async fn install_update(app: AppHandle, update: Update) {
+    show_shell_notification(
+        &app,
+        "VibeCal 更新",
+        "正在下载并安装更新。Windows 会在安装前自动退出应用。",
+    );
+
+    if let Err(error) = update.download_and_install(|_, _| {}, || {}).await {
+        eprintln!("failed to install update: {error}");
+        app.dialog()
+            .message(format!("自动更新失败：{error}"))
+            .title("更新失败")
+            .kind(MessageDialogKind::Error)
+            .buttons(MessageDialogButtons::Ok)
+            .show(|_| {});
+        return;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    app.restart();
+}
+
+fn prompt_for_update(app: &AppHandle, update: Update) {
+    let app_handle = app.clone();
+    app.dialog()
+        .message(update_dialog_message(&update))
+        .title("发现新版本")
+        .kind(MessageDialogKind::Info)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "立即更新".to_string(),
+            "稍后".to_string(),
+        ))
+        .show(move |should_install| {
+            if should_install {
+                let install_app = app_handle.clone();
+                let update_to_install = update.clone();
+                tauri::async_runtime::spawn(async move {
+                    install_update(install_app, update_to_install).await;
+                });
+            }
+        });
+}
+
+async fn check_for_updates(app: AppHandle, interactive: bool) {
+    if !begin_update_check(&app) {
+        if interactive {
+            show_shell_notification(&app, "VibeCal 更新", "已经在检查更新，请稍候。");
+        }
+        return;
+    }
+
+    let before_exit_app = app.clone();
+    let updater_result = app
+        .updater_builder()
+        .endpoints(vec![UPDATE_ENDPOINT
+            .parse()
+            .expect("update endpoint should be valid")])
+        .expect("update endpoints should be valid")
+        .timeout(Duration::from_secs(20))
+        .on_before_exit(move || {
+            let state = app_state(&before_exit_app);
+            state.quitting.store(true, Ordering::Relaxed);
+            let _ = before_exit_app.save_window_state(StateFlags::all());
+        })
+        .build();
+
+    let update_result = match updater_result {
+        Ok(updater) => updater.check().await,
+        Err(error) => Err(error),
+    };
+
+    finish_update_check(&app);
+
+    match update_result {
+        Ok(Some(update)) => prompt_for_update(&app, update),
+        Ok(None) if interactive => {
+            app.dialog()
+                .message("当前已经是最新版本。")
+                .title("检查更新")
+                .kind(MessageDialogKind::Info)
+                .buttons(MessageDialogButtons::Ok)
+                .show(|_| {});
+        }
+        Ok(None) => {}
+        Err(error) => {
+            eprintln!("failed to check for updates: {error}");
+            if interactive {
+                app.dialog()
+                    .message(format!("检查更新失败：{error}"))
+                    .title("检查更新失败")
+                    .kind(MessageDialogKind::Error)
+                    .buttons(MessageDialogButtons::Ok)
+                    .show(|_| {});
+            }
+        }
+    }
+}
+
 fn browser_url_for(page: CloudPage, app: &AppHandle) -> &'static str {
     detect_page_url(app, page)
 }
@@ -793,6 +929,8 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         MenuItem::with_id(app, "show_workspace", "显示全部窗口", true, None::<&str>)?;
     let hide_all_item =
         MenuItem::with_id(app, "hide_workspace", "隐藏全部窗口", true, None::<&str>)?;
+    let check_updates_item =
+        MenuItem::with_id(app, "check_updates", "检查更新", true, None::<&str>)?;
     let print_calendar_item =
         MenuItem::with_id(app, "print_calendar", "打印日历...", true, None::<&str>)?;
     let notify_item = MenuItem::with_id(app, "notify", "测试通知", true, None::<&str>)?;
@@ -822,6 +960,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             app,
             &[
                 &show_all_item,
+                &check_updates_item,
                 &print_calendar_item,
                 &calendar_submenu,
                 &reminders_submenu,
@@ -837,6 +976,12 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             match event.id.as_ref() {
                 "show_workspace" => {
                     let _ = show_workspace(app, true);
+                }
+                "check_updates" => {
+                    let app_handle = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        check_for_updates(app_handle, true).await;
+                    });
                 }
                 "print_calendar" => {
                     let _ = print_page(app, CloudPage::Calendar);
@@ -952,8 +1097,10 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = show_workspace(app, true);
         }))
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -971,10 +1118,14 @@ pub fn run() {
             ensure_autostart(&app_handle);
 
             let deferred_app = app_handle.clone();
+            let startup_update_app = app_handle.clone();
             app.run_on_main_thread(move || {
                 if let Err(error) = initialize_windows(&deferred_app) {
                     eprintln!("failed to initialize windows: {error}");
                 }
+                tauri::async_runtime::spawn(async move {
+                    check_for_updates(startup_update_app, false).await;
+                });
             })?;
 
             Ok(())
