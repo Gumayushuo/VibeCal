@@ -22,11 +22,9 @@ use tauri_plugin_window_state::{
     AppHandleExt as WindowStateAppHandleExt, StateFlags, WindowExt as WindowStateWindowExt,
 };
 #[cfg(target_os = "windows")]
-use windows::{
-    Win32::UI::WindowsAndMessaging::{
-        SetWindowPos, HWND_BOTTOM, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
-        SWP_NOSIZE, SWP_NOOWNERZORDER,
-    },
+use windows::Win32::UI::WindowsAndMessaging::{
+    SetWindowPos, HWND_BOTTOM, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
+    SWP_NOOWNERZORDER, SWP_NOSIZE,
 };
 
 const APP_TITLE: &str = "VibeCal";
@@ -260,7 +258,10 @@ fn app_data_dir(app: &AppHandle) -> Option<PathBuf> {
 }
 
 fn legacy_app_data_dir(app: &AppHandle) -> Option<PathBuf> {
-    app.path().local_data_dir().ok().map(|dir| dir.join(LEGACY_APP_ID))
+    app.path()
+        .local_data_dir()
+        .ok()
+        .map(|dir| dir.join(LEGACY_APP_ID))
 }
 
 fn preferences_path(app: &AppHandle) -> Option<PathBuf> {
@@ -326,7 +327,9 @@ fn persist_preferences(app: &AppHandle) {
 }
 
 fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
-    haystack.windows(needle.len()).any(|window| window == needle)
+    haystack
+        .windows(needle.len())
+        .any(|window| window == needle)
 }
 
 fn copy_dir_recursive(source: &Path, destination: &Path) -> std::io::Result<()> {
@@ -568,11 +571,7 @@ fn show_window(
     Ok(())
 }
 
-fn hide_window(
-    app: &AppHandle,
-    page: CloudPage,
-    remember_hidden: bool,
-) -> tauri::Result<()> {
+fn hide_window(app: &AppHandle, page: CloudPage, remember_hidden: bool) -> tauri::Result<()> {
     if remember_hidden {
         let _ = update_page_preferences(app, page, |page_preferences| {
             page_preferences.visible = false;
@@ -646,6 +645,33 @@ fn browser_url_for(page: CloudPage, app: &AppHandle) -> &'static str {
     detect_page_url(app, page)
 }
 
+fn print_page(app: &AppHandle, page: CloudPage) -> tauri::Result<()> {
+    show_window(app, page, true, true)?;
+
+    let Some(window) = app.get_webview_window(page_label(page)) else {
+        let body = format!("Could not find the {} window to print.", page_name(page));
+        show_shell_notification(app, APP_TITLE, &body);
+        return Ok(());
+    };
+
+    let print_script = r#"
+if (document.readyState === "loading") {
+  window.addEventListener("load", () => window.print(), { once: true });
+} else {
+  window.print();
+}
+"#;
+
+    if let Err(error) = window.eval(print_script) {
+        eprintln!("failed to trigger print for {}: {error}", page_label(page));
+        let body = format!("Could not open the print dialog for {}.", page_name(page));
+        show_shell_notification(app, APP_TITLE, &body);
+        return Err(error);
+    }
+
+    Ok(())
+}
+
 fn quit_app(app: &AppHandle) {
     let state = app_state(app);
     state.quitting.store(true, Ordering::Relaxed);
@@ -679,18 +705,21 @@ fn ensure_autostart(app: &AppHandle) {
     }
 }
 
-fn sync_window_menu_controls(
-    controls: &WindowMenuControls,
-    app: &AppHandle,
-) -> tauri::Result<()> {
+fn sync_window_menu_controls(controls: &WindowMenuControls, app: &AppHandle) -> tauri::Result<()> {
     let calendar = page_preferences(app, CloudPage::Calendar);
     let reminders = page_preferences(app, CloudPage::Reminders);
     let notes = page_preferences(app, CloudPage::Notes);
 
-    controls.calendar_desktop.set_checked(calendar.desktop_mode)?;
+    controls
+        .calendar_desktop
+        .set_checked(calendar.desktop_mode)?;
     controls.calendar_top.set_checked(calendar.always_on_top)?;
-    controls.reminders_desktop.set_checked(reminders.desktop_mode)?;
-    controls.reminders_top.set_checked(reminders.always_on_top)?;
+    controls
+        .reminders_desktop
+        .set_checked(reminders.desktop_mode)?;
+    controls
+        .reminders_top
+        .set_checked(reminders.always_on_top)?;
     controls.notes_desktop.set_checked(notes.desktop_mode)?;
     controls.notes_top.set_checked(notes.always_on_top)?;
 
@@ -700,7 +729,11 @@ fn sync_window_menu_controls(
 fn build_window_submenu(
     app: &AppHandle,
     page: CloudPage,
-) -> tauri::Result<(Submenu<tauri::Wry>, CheckMenuItem<tauri::Wry>, CheckMenuItem<tauri::Wry>)> {
+) -> tauri::Result<(
+    Submenu<tauri::Wry>,
+    CheckMenuItem<tauri::Wry>,
+    CheckMenuItem<tauri::Wry>,
+)> {
     let show_item = MenuItem::with_id(
         app,
         format!("show_{}", page_label(page)),
@@ -743,7 +776,13 @@ fn build_window_submenu(
         app,
         page_name(page),
         true,
-        &[&show_item, &hide_item, &desktop_item, &top_item, &browser_item],
+        &[
+            &show_item,
+            &hide_item,
+            &desktop_item,
+            &top_item,
+            &browser_item,
+        ],
     )?;
 
     Ok((submenu, desktop_item, top_item))
@@ -754,6 +793,13 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         MenuItem::with_id(app, "show_workspace", "Show Workspace", true, None::<&str>)?;
     let hide_all_item =
         MenuItem::with_id(app, "hide_workspace", "Hide Workspace", true, None::<&str>)?;
+    let print_calendar_item = MenuItem::with_id(
+        app,
+        "print_calendar",
+        "Print Calendar...",
+        true,
+        None::<&str>,
+    )?;
     let notify_item = MenuItem::with_id(app, "notify", "Test Notification", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -762,8 +808,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         build_window_submenu(app, CloudPage::Calendar)?;
     let (reminders_submenu, reminders_desktop, reminders_top) =
         build_window_submenu(app, CloudPage::Reminders)?;
-    let (notes_submenu, notes_desktop, notes_top) =
-        build_window_submenu(app, CloudPage::Notes)?;
+    let (notes_submenu, notes_desktop, notes_top) = build_window_submenu(app, CloudPage::Notes)?;
 
     let controls = WindowMenuControls {
         calendar_desktop,
@@ -782,6 +827,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             app,
             &[
                 &show_all_item,
+                &print_calendar_item,
                 &calendar_submenu,
                 &reminders_submenu,
                 &notes_submenu,
@@ -796,6 +842,9 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             match event.id.as_ref() {
                 "show_workspace" => {
                     let _ = show_workspace(app, true);
+                }
+                "print_calendar" => {
+                    let _ = print_page(app, CloudPage::Calendar);
                 }
                 "show_calendar" => {
                     let _ = show_window(app, CloudPage::Calendar, true, true);
@@ -858,7 +907,11 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                     let _ = hide_workspace(app);
                 }
                 "notify" => {
-                    show_shell_notification(app, APP_TITLE, "Native notification plumbing is active.");
+                    show_shell_notification(
+                        app,
+                        APP_TITLE,
+                        "Native notification plumbing is active.",
+                    );
                 }
                 "quit" => {
                     quit_app(app);

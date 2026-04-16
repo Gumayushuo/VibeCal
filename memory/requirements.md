@@ -21,6 +21,7 @@
 - Support Windows native notifications.
 - Fit normal Windows 11 usage patterns, including pinning to taskbar or desktop shortcuts.
 - Support separate Calendar, Reminders, and Notes windows that can all stay open at the same time.
+- Provide a tray-driven way to print the current Calendar view through the Apple web print flow.
 - Keep regular Calendar, Reminders, and Notes windows fully movable and resizable by the user without enforced docking or ratio logic.
 - Provide a persistent desktop-layer mode that can be toggled independently for each window.
 - Provide a persistent always-on-top mode that can be toggled independently for each window.

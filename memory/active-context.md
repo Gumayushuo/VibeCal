@@ -61,10 +61,12 @@
 - Window initialization has been deferred onto the main thread because direct window creation inside `setup` triggered a Windows `os error 183` crash path during validation.
 - The window show path now applies pinned mode before showing the window so startup no longer flashes a normal top-level window and then appears to lose it.
 - Release builds and installer output compile successfully for the reverted multi-window architecture.
+- The tray now includes a `Print Calendar...` action that triggers the Apple Calendar web print dialog from the Calendar window.
+- The next public release is being prepared as version `0.2.0`.
 
 ## Current Blockers
 - No build blocker remains for the multi-window direction.
-- Runtime UX validation is still needed to confirm that the restored stable desktop-layer behavior matches the older preferred experience and that remembered visibility now tracks the last workspace exactly.
+- Runtime UX validation is still needed to confirm that Apple Calendar prints the expected layout for the user's preferred views and date ranges.
 
 ## Immediate Next Step
-- User validation should confirm that `Pin to Desktop Layer` once again behaves like the older stable version, and that reopening the app restores exactly the last chosen visible window set.
+- User validation should confirm that `Print Calendar...` opens the expected Apple print dialog and that the printed layout matches the user's preferred Calendar views.

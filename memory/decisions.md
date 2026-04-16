@@ -152,3 +152,13 @@
 ### Startup Stability
 - Window creation should be deferred out of the Tauri `setup` hook onto the main thread because eager WebView window creation during `setup` triggered a Windows `os error 183` failure in validation.
 - Showing a pinned window should apply its window mode before `show()` so the app does not visibly flash a normal window and then appear to disappear.
+
+## 2026-04-16
+
+### Calendar Printing
+- The new release should add a tray-level `Print Calendar...` action rather than a custom export format.
+- Printing should be delegated to the Apple Calendar web surface through `window.print()` so the app keeps Apple-owned layout and avoids rebuilding calendar rendering logic locally.
+- The print action should bring the Calendar window to the front before opening the print dialog.
+
+### Release Version
+- The first public release that includes calendar printing is version `0.2.0`.

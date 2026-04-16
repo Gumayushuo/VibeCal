@@ -23,6 +23,7 @@ It keeps Apple-owned web content intact and wraps it in independent desktop wind
 - Single-instance behavior
 - Auto start support
 - Native Windows notification plumbing
+- Tray action to print the current Calendar view through Apple's web print flow
 - Default fallback to the China iCloud domain when no previous cookie domain is known
 - Optional desktop layer mode per window
 - Optional always-on-top mode per window
@@ -90,6 +91,7 @@ npm run build
 - The app now defaults to Calendar only unless the user explicitly opens Reminders or Notes.
 - The windows share one persisted WebView profile but do not force-follow each other for size or position.
 - Tray submenus let you independently show, hide, pin, and top-pin each window.
+- The tray menu now includes `Print Calendar...`, which opens the current Apple Calendar print dialog for the Calendar window.
 - Closing or hiding a window updates the remembered workspace, so the next launch restores the last page set instead of always reopening every page.
 - On a fresh setup, only Calendar is visible by default; after that, relaunch follows the last remembered window set exactly.
 - Desktop-layer mode intentionally changes the pinned window into a chrome-free fixed surface, while regular mode keeps full free resize and movement.
