@@ -63,6 +63,7 @@
 - Release builds and installer output compile successfully for the reverted multi-window architecture.
 - The tray now includes a `Print Calendar...` action that triggers the Apple Calendar web print dialog from the Calendar window.
 - The next public release is being prepared as version `0.2.0`.
+- The tray menu and window titles are now being localized into Chinese for the user's day-to-day controls.
 
 ## Current Blockers
 - No build blocker remains for the multi-window direction.

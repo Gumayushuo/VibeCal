@@ -162,3 +162,6 @@
 
 ### Release Version
 - The first public release that includes calendar printing is version `0.2.0`.
+
+### UI Language
+- The tray-menu control surface and window titles should use Chinese labels because the user's primary operating language for day-to-day app controls is Chinese.

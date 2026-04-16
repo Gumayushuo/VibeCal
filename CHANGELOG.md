@@ -10,3 +10,4 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Bumped the desktop app and installer version to `0.2.0`.
 - Updated project documentation and memory to track the new printing capability and release milestone.
+- Localized the tray-menu control surface and window titles to Chinese.

@@ -212,17 +212,17 @@ fn page_label(page: CloudPage) -> &'static str {
 
 fn page_title(page: CloudPage) -> &'static str {
     match page {
-        CloudPage::Calendar => "VibeCal Calendar",
-        CloudPage::Reminders => "VibeCal Reminders",
-        CloudPage::Notes => "VibeCal Notes",
+        CloudPage::Calendar => "VibeCal 日历",
+        CloudPage::Reminders => "VibeCal 提醒事项",
+        CloudPage::Notes => "VibeCal 备忘录",
     }
 }
 
 fn page_name(page: CloudPage) -> &'static str {
     match page {
-        CloudPage::Calendar => "Calendar",
-        CloudPage::Reminders => "Reminders",
-        CloudPage::Notes => "Notes",
+        CloudPage::Calendar => "日历",
+        CloudPage::Reminders => "提醒事项",
+        CloudPage::Notes => "备忘录",
     }
 }
 
@@ -649,7 +649,7 @@ fn print_page(app: &AppHandle, page: CloudPage) -> tauri::Result<()> {
     show_window(app, page, true, true)?;
 
     let Some(window) = app.get_webview_window(page_label(page)) else {
-        let body = format!("Could not find the {} window to print.", page_name(page));
+        let body = format!("找不到可打印的{}窗口。", page_name(page));
         show_shell_notification(app, APP_TITLE, &body);
         return Ok(());
     };
@@ -664,7 +664,7 @@ if (document.readyState === "loading") {
 
     if let Err(error) = window.eval(print_script) {
         eprintln!("failed to trigger print for {}: {error}", page_label(page));
-        let body = format!("Could not open the print dialog for {}.", page_name(page));
+        let body = format!("无法打开{}的打印对话框。", page_name(page));
         show_shell_notification(app, APP_TITLE, &body);
         return Err(error);
     }
@@ -737,21 +737,21 @@ fn build_window_submenu(
     let show_item = MenuItem::with_id(
         app,
         format!("show_{}", page_label(page)),
-        format!("Show {}", page_name(page)),
+        format!("显示{}", page_name(page)),
         true,
         None::<&str>,
     )?;
     let hide_item = MenuItem::with_id(
         app,
         format!("hide_{}", page_label(page)),
-        format!("Hide {}", page_name(page)),
+        format!("隐藏{}", page_name(page)),
         true,
         None::<&str>,
     )?;
     let desktop_item = CheckMenuItem::with_id(
         app,
         format!("{}_desktop_mode", page_label(page)),
-        "Pin to Desktop Layer",
+        "固定到桌面层",
         true,
         page_preferences(app, page).desktop_mode,
         None::<&str>,
@@ -759,7 +759,7 @@ fn build_window_submenu(
     let top_item = CheckMenuItem::with_id(
         app,
         format!("{}_always_on_top", page_label(page)),
-        "Always On Top",
+        "窗口置顶",
         true,
         page_preferences(app, page).always_on_top,
         None::<&str>,
@@ -767,7 +767,7 @@ fn build_window_submenu(
     let browser_item = MenuItem::with_id(
         app,
         format!("browser_{}", page_label(page)),
-        "Open in Browser",
+        "在浏览器中打开",
         true,
         None::<&str>,
     )?;
@@ -790,19 +790,14 @@ fn build_window_submenu(
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let show_all_item =
-        MenuItem::with_id(app, "show_workspace", "Show Workspace", true, None::<&str>)?;
+        MenuItem::with_id(app, "show_workspace", "显示全部窗口", true, None::<&str>)?;
     let hide_all_item =
-        MenuItem::with_id(app, "hide_workspace", "Hide Workspace", true, None::<&str>)?;
-    let print_calendar_item = MenuItem::with_id(
-        app,
-        "print_calendar",
-        "Print Calendar...",
-        true,
-        None::<&str>,
-    )?;
-    let notify_item = MenuItem::with_id(app, "notify", "Test Notification", true, None::<&str>)?;
+        MenuItem::with_id(app, "hide_workspace", "隐藏全部窗口", true, None::<&str>)?;
+    let print_calendar_item =
+        MenuItem::with_id(app, "print_calendar", "打印日历...", true, None::<&str>)?;
+    let notify_item = MenuItem::with_id(app, "notify", "测试通知", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
 
     let (calendar_submenu, calendar_desktop, calendar_top) =
         build_window_submenu(app, CloudPage::Calendar)?;
@@ -907,11 +902,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                     let _ = hide_workspace(app);
                 }
                 "notify" => {
-                    show_shell_notification(
-                        app,
-                        APP_TITLE,
-                        "Native notification plumbing is active.",
-                    );
+                    show_shell_notification(app, APP_TITLE, "原生通知功能已启用。");
                 }
                 "quit" => {
                     quit_app(app);
