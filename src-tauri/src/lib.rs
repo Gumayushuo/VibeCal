@@ -158,10 +158,13 @@ impl AppState {
 
 #[derive(Clone)]
 struct WindowMenuControls {
+    calendar_normal: CheckMenuItem<tauri::Wry>,
     calendar_desktop: CheckMenuItem<tauri::Wry>,
     calendar_top: CheckMenuItem<tauri::Wry>,
+    reminders_normal: CheckMenuItem<tauri::Wry>,
     reminders_desktop: CheckMenuItem<tauri::Wry>,
     reminders_top: CheckMenuItem<tauri::Wry>,
+    notes_normal: CheckMenuItem<tauri::Wry>,
     notes_desktop: CheckMenuItem<tauri::Wry>,
     notes_top: CheckMenuItem<tauri::Wry>,
 }
@@ -181,6 +184,10 @@ fn snapshot_preferences(app: &AppHandle) -> AppPreferences {
 
 fn page_preferences(app: &AppHandle, page: CloudPage) -> WindowPreferences {
     snapshot_preferences(app).page(page)
+}
+
+fn is_normal_window(preferences: WindowPreferences) -> bool {
+    !preferences.desktop_mode && !preferences.always_on_top
 }
 
 fn visible_pages(app: &AppHandle) -> Vec<CloudPage> {
@@ -620,22 +627,35 @@ fn hide_workspace(app: &AppHandle) -> tauri::Result<()> {
 }
 
 fn toggle_desktop_mode(app: &AppHandle, page: CloudPage) -> tauri::Result<WindowPreferences> {
-    let preferences = update_page_preferences(app, page, |page_preferences| {
-        page_preferences.desktop_mode = !page_preferences.desktop_mode;
-        if page_preferences.desktop_mode {
+    let preferences = if page_preferences(app, page).desktop_mode {
+        set_normal_mode(app, page)?
+    } else {
+        update_page_preferences(app, page, |page_preferences| {
+            page_preferences.desktop_mode = true;
             page_preferences.always_on_top = false;
-        }
-    });
+        })
+    };
     refresh_window_modes(app, page)?;
     Ok(preferences)
 }
 
 fn toggle_always_on_top(app: &AppHandle, page: CloudPage) -> tauri::Result<WindowPreferences> {
-    let preferences = update_page_preferences(app, page, |page_preferences| {
-        page_preferences.always_on_top = !page_preferences.always_on_top;
-        if page_preferences.always_on_top {
+    let preferences = if page_preferences(app, page).always_on_top {
+        set_normal_mode(app, page)?
+    } else {
+        update_page_preferences(app, page, |page_preferences| {
+            page_preferences.always_on_top = true;
             page_preferences.desktop_mode = false;
-        }
+        })
+    };
+    refresh_window_modes(app, page)?;
+    Ok(preferences)
+}
+
+fn set_normal_mode(app: &AppHandle, page: CloudPage) -> tauri::Result<WindowPreferences> {
+    let preferences = update_page_preferences(app, page, |page_preferences| {
+        page_preferences.desktop_mode = false;
+        page_preferences.always_on_top = false;
     });
     refresh_window_modes(app, page)?;
     Ok(preferences)
@@ -846,16 +866,21 @@ fn sync_window_menu_controls(controls: &WindowMenuControls, app: &AppHandle) -> 
     let reminders = page_preferences(app, CloudPage::Reminders);
     let notes = page_preferences(app, CloudPage::Notes);
 
+    controls.calendar_normal.set_checked(is_normal_window(calendar))?;
     controls
         .calendar_desktop
         .set_checked(calendar.desktop_mode)?;
     controls.calendar_top.set_checked(calendar.always_on_top)?;
+    controls
+        .reminders_normal
+        .set_checked(is_normal_window(reminders))?;
     controls
         .reminders_desktop
         .set_checked(reminders.desktop_mode)?;
     controls
         .reminders_top
         .set_checked(reminders.always_on_top)?;
+    controls.notes_normal.set_checked(is_normal_window(notes))?;
     controls.notes_desktop.set_checked(notes.desktop_mode)?;
     controls.notes_top.set_checked(notes.always_on_top)?;
 
@@ -867,6 +892,7 @@ fn build_window_submenu(
     page: CloudPage,
 ) -> tauri::Result<(
     Submenu<tauri::Wry>,
+    CheckMenuItem<tauri::Wry>,
     CheckMenuItem<tauri::Wry>,
     CheckMenuItem<tauri::Wry>,
 )> {
@@ -882,6 +908,14 @@ fn build_window_submenu(
         format!("hide_{}", page_label(page)),
         format!("隐藏{}", page_name(page)),
         true,
+        None::<&str>,
+    )?;
+    let normal_item = CheckMenuItem::with_id(
+        app,
+        format!("{}_normal_mode", page_label(page)),
+        "正常窗口",
+        true,
+        is_normal_window(page_preferences(app, page)),
         None::<&str>,
     )?;
     let desktop_item = CheckMenuItem::with_id(
@@ -915,13 +949,14 @@ fn build_window_submenu(
         &[
             &show_item,
             &hide_item,
+            &normal_item,
             &desktop_item,
             &top_item,
             &browser_item,
         ],
     )?;
 
-    Ok((submenu, desktop_item, top_item))
+    Ok((submenu, normal_item, desktop_item, top_item))
 }
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
@@ -937,17 +972,21 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let separator = PredefinedMenuItem::separator(app)?;
     let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
 
-    let (calendar_submenu, calendar_desktop, calendar_top) =
+    let (calendar_submenu, calendar_normal, calendar_desktop, calendar_top) =
         build_window_submenu(app, CloudPage::Calendar)?;
-    let (reminders_submenu, reminders_desktop, reminders_top) =
+    let (reminders_submenu, reminders_normal, reminders_desktop, reminders_top) =
         build_window_submenu(app, CloudPage::Reminders)?;
-    let (notes_submenu, notes_desktop, notes_top) = build_window_submenu(app, CloudPage::Notes)?;
+    let (notes_submenu, notes_normal, notes_desktop, notes_top) =
+        build_window_submenu(app, CloudPage::Notes)?;
 
     let controls = WindowMenuControls {
+        calendar_normal,
         calendar_desktop,
         calendar_top,
+        reminders_normal,
         reminders_desktop,
         reminders_top,
+        notes_normal,
         notes_desktop,
         notes_top,
     };
@@ -992,6 +1031,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                 "hide_calendar" => {
                     let _ = hide_window(app, CloudPage::Calendar, true);
                 }
+                "calendar_normal_mode" => {
+                    let _ = set_normal_mode(app, CloudPage::Calendar);
+                    let _ = show_window(app, CloudPage::Calendar, false, true);
+                }
                 "calendar_desktop_mode" => {
                     let _ = toggle_desktop_mode(app, CloudPage::Calendar);
                     let _ = show_window(app, CloudPage::Calendar, false, true);
@@ -1011,6 +1054,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                 "hide_reminders" => {
                     let _ = hide_window(app, CloudPage::Reminders, true);
                 }
+                "reminders_normal_mode" => {
+                    let _ = set_normal_mode(app, CloudPage::Reminders);
+                    let _ = show_window(app, CloudPage::Reminders, false, true);
+                }
                 "reminders_desktop_mode" => {
                     let _ = toggle_desktop_mode(app, CloudPage::Reminders);
                     let _ = show_window(app, CloudPage::Reminders, false, true);
@@ -1029,6 +1076,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                 }
                 "hide_notes" => {
                     let _ = hide_window(app, CloudPage::Notes, true);
+                }
+                "notes_normal_mode" => {
+                    let _ = set_normal_mode(app, CloudPage::Notes);
+                    let _ = show_window(app, CloudPage::Notes, false, true);
                 }
                 "notes_desktop_mode" => {
                     let _ = toggle_desktop_mode(app, CloudPage::Notes);

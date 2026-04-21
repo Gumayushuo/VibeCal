@@ -16,6 +16,16 @@ All notable changes to this project will be documented in this file.
 - Wired the app to the GitHub Releases `latest.json` updater endpoint.
 - Updated release documentation so changelog sections can be reused as release notes.
 
+## [0.3.1] - 2026-04-21
+
+### Added
+- Added an explicit `Normal Window` mode for each tray submenu so a page can return to a regular movable and resizable window in one click.
+- Added a separate `build:win7` packaging path that swaps the WebView2 installer mode to an embedded bootstrapper for best-effort Windows 7 compatibility testing.
+
+### Changed
+- Bumped the desktop app and installer version to `0.3.1`.
+- Enabled the notification plugin's `windows7-compat` feature for the experimental Windows 7 packaging path.
+
 ## [0.2.0] - 2026-04-16
 
 ### Added

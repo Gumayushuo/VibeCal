@@ -16,6 +16,7 @@ It keeps Apple-owned web content intact and wraps it in independent desktop wind
 - Shared WebView2 session profile across all three windows
 - Free manual moving and resizing for each regular window without enforced docking or panel ratios
 - Per-window `Pin to Desktop Layer` and `Always On Top` controls from the tray menu
+- Explicit per-window `Normal Window` restore action from the tray menu
 - Window visibility is remembered across launches
 - Persistent WebView2 session data across launches
 - Window size, position, and state restore
@@ -61,6 +62,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\reset-local-state.ps1
 - Visual Studio Build Tools for Rust MSVC builds
 - Microsoft Edge WebView2 Runtime
 
+## Windows 7 Experimental Build
+
+- The normal release remains a Windows 11-targeted build.
+- A best-effort Windows 7 installer can be produced with an embedded WebView2 bootstrapper:
+
+```bash
+npm run build:win7
+```
+
+- This path is experimental only. Microsoft no longer lists Windows 7 as a supported platform for current Edge/WebView2 releases, and Apple may reject or degrade older Chromium/WebView2 builds used on Windows 7.
+- The Windows 7 build should therefore be treated as compatibility testing, not as an officially supported target.
+
 Official setup guide: [Tauri prerequisites](https://tauri.app/start/prerequisites/)
 
 ## Development
@@ -81,6 +94,12 @@ Build a release bundle:
 
 ```bash
 npm run build
+```
+
+Build the Windows 7 experimental bundle:
+
+```bash
+npm run build:win7
 ```
 
 Build a signed updater bundle locally:

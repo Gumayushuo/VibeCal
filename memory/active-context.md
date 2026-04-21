@@ -63,12 +63,14 @@
 - Release builds and installer output compile successfully for the reverted multi-window architecture.
 - The tray now includes a `Print Calendar...` action that triggers the Apple Calendar web print dialog from the Calendar window.
 - The app now includes startup and manual update checks wired to GitHub Releases through Tauri's updater plugin.
-- The next public release is being prepared as version `0.3.0`.
+- The next public release is being prepared as version `0.3.1`.
 - The tray menu and window titles are now being localized into Chinese for the user's day-to-day controls.
+- A separate best-effort Windows 7 packaging path is now being prepared with an embedded WebView2 bootstrapper, while the officially supported target remains Windows 11.
+- Each window tray submenu is gaining an explicit normal-window mode so users can leave `Always On Top` or desktop-layer mode in one click.
 
 ## Current Blockers
 - No build blocker remains for the multi-window direction.
 - Runtime UX validation is still needed to confirm that updater prompts, release-note display, and signed install flow behave correctly against a real GitHub Release.
 
 ## Immediate Next Step
-- User validation should confirm that a published `0.3.0` GitHub Release is detected in-app, shows the expected update notes, and installs successfully on Windows.
+- User validation should confirm whether the experimental Windows 7 installer can launch with the older WebView2 path, while the mainline release process continues to target Windows 11.

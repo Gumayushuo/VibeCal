@@ -1,6 +1,6 @@
 [package]
 name = "vibecal"
-version = "0.3.0"
+version = "0.3.1"
 description = "An unofficial Windows desktop wrapper compatible with Apple Calendar"
 authors = ["Codex"]
 edition = "2021"
@@ -16,7 +16,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-notification = "2"
+tauri-plugin-notification = { version = "2", features = ["windows7-compat"] }
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"

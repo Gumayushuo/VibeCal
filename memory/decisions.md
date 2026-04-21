@@ -173,3 +173,12 @@
 
 ### Release Version
 - The first release that includes signed auto-update support is version `0.3.0`.
+
+### Windows 7 Packaging
+- Official project support remains Windows 11, matching the main README requirements and quality bar.
+- A separate `Win7` build path may still be generated as a best-effort compatibility package, using Tauri's embedded WebView2 bootstrapper mode and the notification plugin's `windows7-compat` feature.
+- The Windows 7 package should be treated as experimental only because current Microsoft WebView2 support and Apple web compatibility are outside the project's control.
+
+### Window Modes
+- The tray submenu for each page should expose three explicit states: normal window, desktop-layer mode, and always-on-top mode.
+- Users should be able to leave desktop-layer mode or always-on-top mode in a single click instead of inferring that they must toggle an existing special mode off.
