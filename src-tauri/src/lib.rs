@@ -90,10 +90,14 @@ impl Default for AppPreferences {
     fn default() -> Self {
         let mut calendar = WindowPreferences::default();
         calendar.visible = true;
+        let mut reminders = WindowPreferences::default();
+        reminders.visible = true;
+        let mut notes = WindowPreferences::default();
+        notes.visible = true;
         Self {
             calendar,
-            reminders: WindowPreferences::default(),
-            notes: WindowPreferences::default(),
+            reminders,
+            notes,
             desktop_mode: false,
             always_on_top: false,
         }
@@ -308,6 +312,14 @@ fn load_preferences(app: &AppHandle) -> AppPreferences {
         && !preferences.notes.visible
     {
         preferences.calendar.visible = true;
+        preferences.reminders.visible = true;
+        preferences.notes.visible = true;
+    }
+
+    if !preferences.calendar.visible && !preferences.reminders.visible && !preferences.notes.visible {
+        preferences.calendar.visible = true;
+        preferences.reminders.visible = true;
+        preferences.notes.visible = true;
     }
 
     preferences.normalized()

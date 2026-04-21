@@ -24,7 +24,7 @@
 - No forced docking, panel ratios, or dashboard chrome
 - Free manual resizing and moving for each regular window
 - Per-window always-on-top mode in addition to per-window desktop-layer mode
-- Calendar-only default startup on a fresh setup
+- Calendar, Reminders, and Notes visible together on a fresh setup
 - Window visibility remembered across launches
 
 ## Key Constraint
@@ -56,14 +56,14 @@
 - Tray controls are now split per window, so Calendar, Reminders, and Notes can each independently toggle `Pin to Desktop Layer` and `Always On Top`.
 - Window snapping has been removed again because it made manual adjustment feel worse instead of better.
 - Workspace visibility is now persisted per window so reopened sessions match the user's last chosen page set instead of reopening everything.
-- Fresh setups still default to Calendar only, but once the local visibility fields exist the app follows the remembered workspace exactly, including tray-only launches with no content window visible.
+- Fresh setups now default to showing Calendar, Reminders, and Notes together, and a fully hidden remembered workspace is automatically reset back to those three visible windows on startup.
 - Desktop-layer mode has been restored to the older stable implementation: chrome-free, fixed, skip-taskbar, and bottom-layer behavior without desktop-host reparenting.
 - Window initialization has been deferred onto the main thread because direct window creation inside `setup` triggered a Windows `os error 183` crash path during validation.
 - The window show path now applies pinned mode before showing the window so startup no longer flashes a normal top-level window and then appears to lose it.
 - Release builds and installer output compile successfully for the reverted multi-window architecture.
 - The tray now includes a `Print Calendar...` action that triggers the Apple Calendar web print dialog from the Calendar window.
 - The app now includes startup and manual update checks wired to GitHub Releases through Tauri's updater plugin.
-- The next public release is being prepared as version `0.3.1`.
+- The next public release is being prepared as version `0.3.2`.
 - The tray menu and window titles are now being localized into Chinese for the user's day-to-day controls.
 - A separate best-effort Windows 7 packaging path is now being prepared with an embedded WebView2 bootstrapper, while the officially supported target remains Windows 11.
 - Each window tray submenu is gaining an explicit normal-window mode so users can leave `Always On Top` or desktop-layer mode in one click.

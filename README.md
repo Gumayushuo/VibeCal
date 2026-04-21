@@ -135,13 +135,13 @@ Release setup:
 - `scripts/reset-local-state.ps1` removes current and legacy local runtime data from `%LOCALAPPDATA%` and clears the corresponding Windows auto start entries.
 - `scripts/get-release-notes.ps1` extracts the current version section from `CHANGELOG.md` for release publishing.
 - `node_modules`, build outputs, bootstrap caches, and temporary toolchain folders are ignored and should not be committed.
-- The app now defaults to Calendar only unless the user explicitly opens Reminders or Notes.
+- Fresh installs now open Calendar, Reminders, and Notes together by default.
 - The windows share one persisted WebView profile but do not force-follow each other for size or position.
 - Tray submenus let you independently show, hide, pin, and top-pin each window.
 - The tray menu now includes `Print Calendar...`, which opens the current Apple Calendar print dialog for the Calendar window.
 - The tray menu also includes a manual update-check action, and the update prompt shows the release notes supplied by the updater feed.
 - Closing or hiding a window updates the remembered workspace, so the next launch restores the last page set instead of always reopening every page.
-- On a fresh setup, only Calendar is visible by default; after that, relaunch follows the last remembered window set exactly.
+- If a local settings file would otherwise reopen with every page hidden, the app now restores all three windows instead.
 - Desktop-layer mode intentionally changes the pinned window into a chrome-free fixed surface, while regular mode keeps full free resize and movement.
 
 ## Known Constraints

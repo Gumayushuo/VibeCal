@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2026-04-21
+
+### Changed
+- Bumped the desktop app and installer version to `0.3.2`.
+- Changed the default startup workspace so fresh installs open Calendar, Reminders, and Notes together.
+- Added a startup fallback that restores all three windows if a local settings file would otherwise launch the app with every page hidden.
+
 ## [0.3.0] - 2026-04-16
 
 ### Added

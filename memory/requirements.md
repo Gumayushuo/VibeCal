@@ -26,7 +26,7 @@
 - Keep regular Calendar, Reminders, and Notes windows fully movable and resizable by the user without enforced docking or ratio logic.
 - Provide a persistent desktop-layer mode that can be toggled independently for each window.
 - Provide a persistent always-on-top mode that can be toggled independently for each window.
-- Default to opening Calendar only on a fresh setup.
+- Default to opening Calendar, Reminders, and Notes together on a fresh setup.
 - Remember which windows were visible or closed so the next launch restores the user's last workspace state exactly.
 - Treat recurring items inside a dedicated `Habits` reminders list as the first implementation path for daily habits.
 - Prefer the China iCloud domain by default when no existing cookie domain is detected.

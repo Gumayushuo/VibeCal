@@ -1,6 +1,6 @@
 [package]
 name = "vibecal"
-version = "0.3.1"
+version = "0.3.2"
 description = "An unofficial Windows desktop wrapper compatible with Apple Calendar"
 authors = ["Codex"]
 edition = "2021"

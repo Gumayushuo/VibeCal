@@ -141,10 +141,9 @@
 - The accepted desktop-layer behavior is the earlier, more stable implementation: chrome-free window, fixed size, skip-taskbar, and bottom-layer ordering without desktop-host reparenting.
 
 ### Visibility Memory
-- The app should no longer reopen every page on every launch.
-- Calendar should be the only default visible page on a fresh setup.
-- Reminders and Notes should become opt-in windows that reopen only if the user left them visible in the last remembered workspace.
-- Once the new visibility fields exist in local settings, the app should respect the remembered workspace exactly, including the case where the user previously hid every content window and only left the tray running.
+- The app should no longer reopen an unpredictable subset of pages on launch.
+- Calendar, Reminders, and Notes should all be visible together on a fresh setup.
+- If local settings would otherwise reopen with every content window hidden, startup should recover to all three visible windows instead of launching into an empty tray-only state.
 
 ### Snap Reversal
 - Automatic snap alignment should be removed again because the user prefers unconstrained manual positioning over proximity snapping.
