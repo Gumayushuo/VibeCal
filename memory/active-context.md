@@ -26,10 +26,10 @@
 - Browser fixtures passed settings interactions, batch modes, export dispatch/save, narrow-window layout, cross-origin frame collection, and password-page exclusion.
 - Final Rust tests, strict Clippy, browser fixtures, and the Windows release installer build passed after the last code edits.
 - Isolated native WebView2 validation confirmed actual settings IPC, local-origin checks, persisted preferences, 70% Win32 alpha (179), and automatic zoom (0.5 for a 600x450 fixture).
-- Validation details and account-dependent limits are in VERIFICATION.md. No changes have been pushed to GitHub.
+- Validation details and account-dependent limits are in VERIFICATION.md. Source commit e0e7b71 and tag v0.4.0 were pushed to GitHub.
+- GitHub Actions run 37324524366 completed successfully. The signed v0.4.0 release is public and latest; the live latest.json feed returns 0.4.0 with signed entries for both Windows targets.
+- An isolated client reporting version 0.3.0 detected 0.4.0 from the live endpoint and downloaded 3,313,758 bytes through Tauri's updater with the original public key signature verified. Installation was deliberately not started.
 
 ## Immediate Next Step
-- Deliver the completed executable/installer with explicit export limits.
-- User requested distribution through the existing updater. The original public key and application identifier match v0.3.0; the current live updater feed is still v0.3.0. GitHub repository access and both original signing secret names were verified without reading secret values.
-- Prepare v0.4.0 through the existing GitHub signing pipeline, verify draft installer signatures against the embedded key, and only then publish it as the latest release.
+- Existing users with the updater can now check for updates and confirm installation of v0.4.0; versions without the updater still need manual installation.
 - Validate the actual signed-in Apple calendar view, reminder links, and Windows opacity behavior with the user's account and preferred desktop dimensions. The existing running app has not been stopped or replaced.
