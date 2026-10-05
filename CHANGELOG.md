@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-10-05
+
+### Added
+- Added a persistent local settings panel for adjusting all three windows without reopening the tray menu.
+- Added per-window content zoom, optional automatic fit on resize, and whole-window opacity.
+- Added one-click desktop pinning and normal-window restore for all windows.
+- Added TXT and CSV export for currently loaded page text, with native save dialogs.
+- Added local ICS conversion to TXT or calendar CSV, including date-range selection, recurring occurrences, exclusions, exceptions, and timezone validation.
+- Added export regression tests and a local installer build command that does not require updater signing keys.
+
+### Fixed
+- Routed external navigation and new-window links to the default browser while preserving embedded iCloud navigation and Apple authentication.
+- Kept tray window-mode checkmarks synchronized with the settings panel.
+
+### Notes
+- Page-text export does not back up an entire iCloud account or fetch unopened/virtualized content.
+- Calendar CSV contains dated events from a supplied ICS file; page-text CSV is a separate text-backup format.
+- CSV expands recurring events into independent occurrences. Original ICS is recommended for Outlook migration that needs recurrence rules, attachments, or alarms.
+
 ## [0.3.2] - 2026-04-21
 
 ### Changed

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VibeCal 窗口设置与导出</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header><span class="brand">VibeCal</span><h1>让日历适合你的桌面</h1>
+      <p>设置立即生效并自动保存。可以连续调整三个窗口。</p></header>
+    <div class="workspace-actions"><button id="pin-all">全部固定到桌面</button>
+      <button id="normal-all" class="secondary">全部恢复正常窗口</button></div>
+    <div id="windows"></div>
+    <section class="export"><h2>导出页面文字</h2>
+      <p>先在对应窗口打开要导出的内容。只导出当前已加载的文字，不包含未打开的备忘录、未加载的日程、附件或完整账号数据。</p>
+      <div class="export-actions"><label>内容 <select id="export-page"><option value="notes">备忘录</option>
+        <option value="reminders">提醒事项</option><option value="calendar">日历</option></select></label>
+        <button data-export="txt">导出 TXT</button><button data-export="csv" class="secondary">导出 CSV</button></div>
+      <p class="hint">这里的 CSV 用于文字备份，不能直接导入 Outlook 日历。迁移完整日历请使用包含事件日期与时区的 ICS 文件。</p>
+    </section>
+    <section class="export"><h2>日历文件转换</h2>
+      <p>选择已导出的 ICS 日历文件，转换成 TXT 或带有事件日期字段的 CSV。文件只在本机处理。</p>
+      <label class="row">日历文件<input id="calendar-file" type="file" accept=".ics,text/calendar"></label>
+      <label class="row">开始日期<input id="calendar-from" aria-label="开始日期" type="date"></label>
+      <label class="row">结束日期<input id="calendar-through" aria-label="结束日期" type="date"></label>
+      <div class="export-actions"><button data-calendar-export="txt">转换为 TXT</button><button data-calendar-export="csv" class="secondary">转换为日历 CSV</button></div>
+      <p class="hint">CSV 将重复日程展开为所选范围内的独立事件，时间使用电脑本地时区。适用于经典 Outlook 的字段映射导入；新版或网页版 Outlook 请直接导入原始 ICS。提醒、附件与重复规则请保留在原始 ICS 中。</p>
+      <details><summary>如何获取完整日历文件</summary><p>可在 Mac 日历中使用“文件 → 导出”。Apple 的 iCloud 网页下载流程需要临时公开共享日历，下载后请关闭公开共享；公开期间，持有链接的人能读取日历。</p>
+        <p><a href="https://support.apple.com/en-us/108306" target="_blank" rel="noopener">Apple 日历导出说明</a> · <a href="https://support.microsoft.com/en-us/outlook/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web" target="_blank" rel="noopener">Outlook 导入说明</a></p></details>
+    </section>
+    <p id="status" role="status" aria-live="polite">正在读取设置…</p>
+  </main>
+  <script type="module" src="settings.js"></script>
+</body>
+</html>

@@ -23,6 +23,8 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 use tauri_plugin_window_state::{
     AppHandleExt as WindowStateAppHandleExt, StateFlags, WindowExt as WindowStateWindowExt,
 };
+mod desktop_controls;
+use desktop_controls::{apply_appearance, open_controls};
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{
     SetWindowPos, HWND_BOTTOM, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
@@ -62,7 +64,7 @@ struct WindowGeometry {
     height: f64,
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 struct WindowPreferences {
     #[serde(default)]
     desktop_mode: bool,
@@ -70,6 +72,32 @@ struct WindowPreferences {
     always_on_top: bool,
     #[serde(default)]
     visible: bool,
+    #[serde(default = "default_zoom")]
+    zoom: f64,
+    #[serde(default = "default_opacity")]
+    opacity: u8,
+    #[serde(default)]
+    auto_fit: bool,
+}
+
+fn default_zoom() -> f64 {
+    1.0
+}
+fn default_opacity() -> u8 {
+    100
+}
+
+impl Default for WindowPreferences {
+    fn default() -> Self {
+        Self {
+            desktop_mode: false,
+            always_on_top: false,
+            visible: false,
+            zoom: default_zoom(),
+            opacity: default_opacity(),
+            auto_fit: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,16 +116,14 @@ struct AppPreferences {
 
 impl Default for AppPreferences {
     fn default() -> Self {
-        let mut calendar = WindowPreferences::default();
-        calendar.visible = true;
-        let mut reminders = WindowPreferences::default();
-        reminders.visible = true;
-        let mut notes = WindowPreferences::default();
-        notes.visible = true;
+        let visible = WindowPreferences {
+            visible: true,
+            ..Default::default()
+        };
         Self {
-            calendar,
-            reminders,
-            notes,
+            calendar: visible,
+            reminders: visible,
+            notes: visible,
             desktop_mode: false,
             always_on_top: false,
         }
@@ -116,6 +142,12 @@ impl AppPreferences {
         }
 
         for page_preferences in [&mut self.calendar, &mut self.reminders, &mut self.notes] {
+            page_preferences.zoom = if page_preferences.zoom.is_finite() {
+                page_preferences.zoom.clamp(0.25, 1.5)
+            } else {
+                1.0
+            };
+            page_preferences.opacity = page_preferences.opacity.clamp(30, 100);
             if page_preferences.desktop_mode {
                 page_preferences.always_on_top = false;
             }
@@ -216,6 +248,9 @@ fn update_page_preferences(
     *preferences = normalized.clone();
     drop(preferences);
     persist_preferences(app);
+    if let Some(controls) = app.try_state::<WindowMenuControls>() {
+        let _ = sync_window_menu_controls(&controls, app);
+    }
     normalized.page(page)
 }
 
@@ -316,7 +351,8 @@ fn load_preferences(app: &AppHandle) -> AppPreferences {
         preferences.notes.visible = true;
     }
 
-    if !preferences.calendar.visible && !preferences.reminders.visible && !preferences.notes.visible {
+    if !preferences.calendar.visible && !preferences.reminders.visible && !preferences.notes.visible
+    {
         preferences.calendar.visible = true;
         preferences.reminders.visible = true;
         preferences.notes.visible = true;
@@ -484,6 +520,7 @@ fn apply_window_modes(window: &WebviewWindow, preferences: WindowPreferences) ->
     }
 
     apply_native_window_z_order(window, preferences);
+    apply_appearance(window, preferences)?;
     Ok(())
 }
 
@@ -498,6 +535,8 @@ fn refresh_window_modes(app: &AppHandle, page: CloudPage) -> tauri::Result<()> {
 fn create_window(app: &AppHandle, page: CloudPage) -> tauri::Result<WebviewWindow> {
     let geometry = page_default_geometry(page);
     let preferences = page_preferences(app, page);
+    let popup_app = app.clone();
+    let navigation_app = app.clone();
     let window = WebviewWindowBuilder::new(
         app,
         page_label(page),
@@ -518,12 +557,34 @@ fn create_window(app: &AppHandle, page: CloudPage) -> tauri::Result<WebviewWindo
     .always_on_top(preferences.always_on_top && !preferences.desktop_mode)
     .visible(false)
     .data_directory(webview_data_dir(app)?)
+    .initialization_script_for_all_frames(include_str!("page-export.js"))
+    .on_new_window(move |url, _features| {
+        if !desktop_controls::is_external_link(&url) && matches!(url.scheme(), "http" | "https") {
+            return tauri::webview::NewWindowResponse::Allow;
+        }
+        desktop_controls::open_external_link(&popup_app, &url);
+        tauri::webview::NewWindowResponse::Deny
+    })
+    .on_navigation(move |url| {
+        if desktop_controls::is_external_link(url) {
+            desktop_controls::open_external_link(&navigation_app, url);
+            false
+        } else {
+            true
+        }
+    })
+    .on_page_load(move |window, _payload| {
+        let _ = apply_appearance(&window, page_preferences(window.app_handle(), page));
+    })
     .build()?;
 
     let managed_window = window.clone();
     let managed_app = app.clone();
     let managed_state = app_state(app);
     window.on_window_event(move |event| match event {
+        WindowEvent::Resized(_) | WindowEvent::ScaleFactorChanged { .. } => {
+            let _ = apply_appearance(&managed_window, page_preferences(&managed_app, page));
+        }
         WindowEvent::CloseRequested { api, .. } => {
             if managed_state.quitting.load(Ordering::Relaxed) {
                 let _ = managed_app.save_window_state(StateFlags::all());
@@ -726,6 +787,7 @@ async fn install_update(app: AppHandle, update: Update) {
             .kind(MessageDialogKind::Error)
             .buttons(MessageDialogButtons::Ok)
             .show(|_| {});
+        #[cfg(not(target_os = "windows"))]
         return;
     }
 
@@ -878,7 +940,9 @@ fn sync_window_menu_controls(controls: &WindowMenuControls, app: &AppHandle) -> 
     let reminders = page_preferences(app, CloudPage::Reminders);
     let notes = page_preferences(app, CloudPage::Notes);
 
-    controls.calendar_normal.set_checked(is_normal_window(calendar))?;
+    controls
+        .calendar_normal
+        .set_checked(is_normal_window(calendar))?;
     controls
         .calendar_desktop
         .set_checked(calendar.desktop_mode)?;
@@ -899,15 +963,14 @@ fn sync_window_menu_controls(controls: &WindowMenuControls, app: &AppHandle) -> 
     Ok(())
 }
 
-fn build_window_submenu(
-    app: &AppHandle,
-    page: CloudPage,
-) -> tauri::Result<(
+type WindowSubmenuBundle = (
     Submenu<tauri::Wry>,
     CheckMenuItem<tauri::Wry>,
     CheckMenuItem<tauri::Wry>,
     CheckMenuItem<tauri::Wry>,
-)> {
+);
+
+fn build_window_submenu(app: &AppHandle, page: CloudPage) -> tauri::Result<WindowSubmenuBundle> {
     let show_item = MenuItem::with_id(
         app,
         format!("show_{}", page_label(page)),
@@ -953,6 +1016,13 @@ fn build_window_submenu(
         true,
         None::<&str>,
     )?;
+    let settings_item = MenuItem::with_id(
+        app,
+        format!("settings_{}", page_label(page)),
+        "缩放、透明度与导出...",
+        true,
+        None::<&str>,
+    )?;
 
     let submenu = Submenu::with_items(
         app,
@@ -965,6 +1035,7 @@ fn build_window_submenu(
             &desktop_item,
             &top_item,
             &browser_item,
+            &settings_item,
         ],
     )?;
 
@@ -972,6 +1043,17 @@ fn build_window_submenu(
 }
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
+    let settings_item = MenuItem::with_id(
+        app,
+        "window_settings",
+        "窗口设置与导出...",
+        true,
+        None::<&str>,
+    )?;
+    let pin_all_item =
+        MenuItem::with_id(app, "pin_all", "一键固定全部窗口到桌面", true, None::<&str>)?;
+    let normal_all_item =
+        MenuItem::with_id(app, "normal_all", "全部恢复正常窗口", true, None::<&str>)?;
     let show_all_item =
         MenuItem::with_id(app, "show_workspace", "显示全部窗口", true, None::<&str>)?;
     let hide_all_item =
@@ -1003,6 +1085,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         notes_top,
     };
     sync_window_menu_controls(&controls, app)?;
+    app.manage(controls.clone());
 
     let event_controls = controls.clone();
     let mut tray = TrayIconBuilder::new()
@@ -1011,6 +1094,9 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             app,
             &[
                 &show_all_item,
+                &settings_item,
+                &pin_all_item,
+                &normal_all_item,
                 &check_updates_item,
                 &print_calendar_item,
                 &calendar_submenu,
@@ -1025,6 +1111,17 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| {
             match event.id.as_ref() {
+                "window_settings" | "settings_calendar" | "settings_reminders"
+                | "settings_notes" => {
+                    let _ = open_controls(app);
+                }
+                "pin_all" | "normal_all" => {
+                    if let Err(error) =
+                        desktop_controls::set_workspace_mode(app, event.id.as_ref() == "pin_all")
+                    {
+                        desktop_controls::show_error(app, &error);
+                    }
+                }
                 "show_workspace" => {
                     let _ = show_workspace(app, true);
                 }
@@ -1157,6 +1254,13 @@ fn initialize_windows(app: &AppHandle) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![
+            desktop_controls::get_window_preferences,
+            desktop_controls::set_window_preferences,
+            desktop_controls::set_all_window_modes,
+            desktop_controls::export_current_page,
+            desktop_controls::save_calendar_export,
+        ])
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = show_workspace(app, true);
         }))

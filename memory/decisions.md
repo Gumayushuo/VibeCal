@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-10-05
+
+### User Feedback Implementation
+- The user requested making v0.4.0 available to existing users through the established updater. Preserve the original signing key and endpoint; publish signed release assets through GitHub Actions. Build into a draft and verify both Windows feed targets before exposing the release as latest.
+- Keep the independent Apple web windows and shared WebView profile. A local settings window is a control surface only, not a replacement dashboard.
+- Use WebView2 content zoom rather than patching Apple's CSS fonts. Automatic fit scales relative to original window dimensions and keeps the user-selected zoom as its ceiling.
+- Use native layered-window alpha for per-window opacity, preserving 100% defaults for existing settings.
+- Keep native tray semantics; provide a settings panel and one-click workspace pin/restore actions instead of forcing context menus to remain open.
+- Open external HTTP(S), mail, and telephone links through the OS opener. Retain iCloud and known Apple sign-in origins in embedded navigation/popups.
+- Cloud pages receive no filesystem or settings-command capability. Native WebView2 script evaluation collects loaded text from visible iCloud frames; account-wide enumeration is not implemented.
+- Separate page-text backup from calendar conversion. Use pinned ICAL.js 2.2.1 locally for ICS conversion, expand recurrence within a requested range, fail on missing timezone definitions, and recommend original ICS for lossless migration.
+- Document public-calendar download privacy implications. Do not enable public sharing or collect credentials automatically.
+- Prepare version 0.4.0 locally. GitHub publishing, signed updater generation, and actual signed-in iCloud validation remain separate from local compilation and fixture checks.
+
 ## 2026-04-13
 
 ### Project Identity

@@ -30,11 +30,15 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Check calendar export regressions
+        run: npm test
+
       - name: Resolve release metadata
         id: release_meta
         shell: pwsh
         run: |
           $package = Get-Content package.json -Raw | ConvertFrom-Json
+          $tauri = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
           $version = $package.version
           $tag = "v$version"
 
@@ -45,6 +49,9 @@ jobs:
 
           if ($package.version -ne $version) {
             throw "Release version $version does not match package.json version $($package.version)."
+          }
+          if ($tauri.version -ne $version) {
+            throw "Release version does not match tauri.conf.json."
           }
 
           $releaseBody = & .\scripts\get-release-notes.ps1 -Version $version
@@ -63,13 +70,17 @@ jobs:
         run: |
           $privateKey = $env:RAW_TAURI_SIGNING_PRIVATE_KEY.Trim()
           $password = $env:RAW_TAURI_SIGNING_PRIVATE_KEY_PASSWORD.Trim()
+          if ([string]::IsNullOrWhiteSpace($privateKey)) {
+            throw "The original updater signing private key is required."
+          }
 
           Add-Content -Path $env:GITHUB_ENV -Value "TAURI_SIGNING_PRIVATE_KEY<<EOF"
           Add-Content -Path $env:GITHUB_ENV -Value $privateKey
           Add-Content -Path $env:GITHUB_ENV -Value "EOF"
           Add-Content -Path $env:GITHUB_ENV -Value "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$password"
 
-      - name: Build and publish Tauri release
+      - name: Build signed Tauri release as draft
+        id: tauri_release
         uses: tauri-apps/tauri-action@action-v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,5 +91,23 @@ jobs:
           tagName: ${{ steps.release_meta.outputs.tag }}
           releaseName: VibeCal v${{ steps.release_meta.outputs.version }}
           releaseBody: ${{ steps.release_meta.outputs.release_body }}
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          uploadPlainBinary: true
+
+      - name: Verify signed updater assets and publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release_meta.outputs.version }}
+        run: |
+          gh release download $env:RELEASE_TAG --dir release-verification --pattern latest.json --pattern '*-setup.exe'
+          if ($LASTEXITCODE -ne 0) { throw "Could not download draft updater assets." }
+          $installer = "release-verification/VibeCal_$($env:RELEASE_VERSION)_x64-setup.exe"
+          cargo run --release --locked --manifest-path src-tauri/Cargo.toml --example verify-update -- src-tauri/tauri.conf.json release-verification/latest.json $installer
+          if ($LASTEXITCODE -ne 0) { throw "Updater verification failed; release remains a draft." }
+          gh release edit $env:RELEASE_TAG --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw "Could not publish the verified release." }

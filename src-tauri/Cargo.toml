@@ -1,6 +1,6 @@
 [package]
 name = "vibecal"
-version = "0.3.2"
+version = "0.4.0"
 description = "An unofficial Windows desktop wrapper compatible with Apple Calendar"
 authors = ["Codex"]
 edition = "2021"
@@ -24,3 +24,10 @@ tauri-plugin-window-state = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 windows = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+webview2-com = "0.38.2"
+
+[dev-dependencies]
+base64 = "0.22"
+minisign-verify = "0.2.5"

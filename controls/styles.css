@@ -1,0 +1,35 @@
+:root { color-scheme: light dark; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #24312d; background: #f3f5f1; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 680px; margin: auto; padding: 26px 26px 76px; }
+header { margin-bottom: 22px; }
+.brand { color: #537660; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+h1 { font-size: 25px; margin: 8px 0; font-weight: 650; }
+h2 { font-size: 17px; margin: 0 0 14px; }
+p { font-size: 13px; color: #647069; line-height: 1.65; margin: 8px 0; }
+section { background: #fff; padding: 20px; border: 1px solid #dfe5dc; border-radius: 12px; margin: 14px 0; }
+button, select { font: inherit; font-size: 13px; border-radius: 7px; min-height: 35px; padding: 7px 12px; }
+button { background: #365d45; color: #fff; border: 1px solid #365d45; cursor: pointer; }
+button:hover { filter: brightness(1.12); }
+button.secondary { color: #365d45; background: transparent; border-color: #c4d2c7; }
+button:disabled { opacity: .5; cursor: wait; }
+select { color: inherit; background: #f8faf7; border: 1px solid #c4d2c7; }
+.workspace-actions, .export-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 14px 0; font-size: 13px; }
+.slider { display: flex; gap: 12px; align-items: center; flex: 1; max-width: 310px; }
+input[type="range"] { width: 100%; accent-color: #365d45; }
+output { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+.fit { font-size: 13px; display: flex; align-items: center; gap: 7px; }
+.hint { font-size: 12px; color: #748078; }
+#status { position: fixed; bottom: 0; left: 0; right: 0; margin: 0; padding: 10px 26px; min-height: 42px; color: #365d45; background: #f3f5f1; border-top: 1px solid #dfe5dc; z-index: 1; }
+#status.error { color: #ad3838; }
+@media (prefers-color-scheme: dark) {
+  :root { color: #e1e9e2; background: #1d2520; }
+  section { background: #263028; border-color: #3a493e; }
+  p, .hint { color: #a4b4a8; }
+  .brand, #status { color: #a5c9ab; }
+  #status { background: #1d2520; border-color: #3a493e; }
+  select { background: #263028; border-color: #536b58; }
+  button.secondary { color: #bed3c1; border-color: #536b58; }
+}
+@media (max-width: 480px) { main { padding: 16px 16px 76px; } .row { gap: 10px; } .slider { max-width: 220px; } }

@@ -30,6 +30,13 @@ It keeps Apple-owned web content intact and wraps it in independent desktop wind
 - Optional desktop layer mode per window
 - Optional always-on-top mode per window
 - No extra console window when launching the app directly
+- Persistent per-window content zoom (25% to 150%) and optional automatic fit while resizing
+- Persistent per-window opacity (30% to 100%)
+- A local settings panel that stays open for consecutive adjustments
+- One-click desktop pinning and normal-window restore for all three windows
+- External links open in the default browser, while iCloud navigation and Apple sign-in stay embedded
+- Export of currently loaded page text to UTF-8 TXT or CSV
+- Local ICS-to-TXT and ICS-to-calendar-CSV conversion with recurrence expansion over a selected date range
 
 ## Privacy And Local State
 
@@ -96,6 +103,35 @@ Build a release bundle:
 npm run build
 ```
 
+Build a local installer without generating signed updater artifacts:
+
+```powershell
+npm run build:local
+```
+
+Run export regression tests and Rust checks:
+
+```powershell
+npm test
+npm run prepare:controls
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+```
+
+The local settings assets are bundled from `controls/`. The pre-build step copies the pinned ICAL.js dependency and its MPL-2.0 license into the bundle; no runtime CDN connection is needed. The three iCloud windows continue to load Apple-owned pages with the existing shared WebView profile.
+
+## Window Settings And Export
+
+Open `Window Settings and Export...` from the tray menu (the actual controls are in Chinese). This panel remains open while changing multiple windows. `Pin All Windows to Desktop` also performs the common three-window operation in one click.
+
+Content zoom scales the whole web layout, including fonts. Automatic fit uses the original window dimensions as a reference and reduces zoom as the window becomes smaller, up to the selected maximum. Apple can change its page layout, so a particular calendar view may still need a smaller manual zoom. Switch to normal mode to move or resize a pinned window, then pin it again. Opacity applies to the entire window, including text; 100% is fully opaque. Existing settings keep their original 100% zoom and opacity when upgraded.
+
+Page-text exports include rendered text from currently loaded visible iCloud frames. They do not enumerate the account, load unopened notes, scroll virtualized lists, fetch hidden events, or export attachments. TXT preserves the captured text; CSV uses `Source, Page Title, Line, Text` columns with a UTF-8 BOM for spreadsheet readability and neutralizes formula-like text. This CSV is a text backup and is not an Outlook calendar import.
+
+For calendar migration, choose an existing ICS file in the settings panel and select the export date range. The converter generates TXT or calendar CSV with `Subject, Start Date, Start Time, End Date, End Time, All day event, Description, Location, Private` columns. It handles event exclusions, moved/cancelled occurrences, and supplied `VTIMEZONE` definitions. Missing timezone definitions produce an error instead of silently changing times. Times are converted to the computer's local timezone. CSV flattens recurrence into separate events within the selected range; alarms, attachments, and recurrence rules remain available in the original ICS only. Classic Outlook CSV import may require mapping columns and matching the regional date format; verify a small import first. For Outlook on the web or the new Outlook, import the original ICS.
+
+Apple documents calendar export from Mac and a download workflow from iCloud.com that requires temporarily public sharing. Public sharing makes the calendar readable by anyone holding its link until sharing is disabled. VibeCal does not enable sharing or collect account credentials. See [Apple's archive instructions](https://support.apple.com/en-us/108306) and [Microsoft's calendar import instructions](https://support.microsoft.com/en-us/outlook/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web).
+
 Build the Windows 7 experimental bundle:
 
 ```bash
@@ -125,7 +161,10 @@ Release setup:
 1. Generate an updater signing key with `npm run tauri signer generate -- --ci -w <path-to-private-key>`.
 2. Add `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` to your GitHub repository secrets.
 3. Push a version tag such as `v0.3.0`.
-4. GitHub Actions builds the Windows installer, updater artifacts, signatures, and publishes them to the matching release.
+  4. GitHub Actions builds a draft release containing the Windows installer, signatures, executable, and `latest.json`.
+  5. The workflow verifies the downloaded installer signature against the app's embedded public key for both Windows updater targets, then publishes the verified release as latest. Failed verification leaves the release as a draft and keeps the previous live update unchanged.
+
+Existing users who already have the updater can upgrade directly to a newer release without installing intermediate versions. Keep the original updater public/private key pair, app identifier, and update endpoint. A local build made with `build:local` is suitable for manual installation, but must go through the signing workflow before it can serve as an automatic update.
 
 ## Repository Notes
 

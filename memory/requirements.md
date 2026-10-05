@@ -32,6 +32,9 @@
 - Prefer the China iCloud domain by default when no existing cookie domain is detected.
 
 ## Constraints
+- User-feedback scope includes smaller complete calendar views through content zoom, optional automatic fit, per-window opacity, working external links, and fewer clicks when pinning the workspace.
+- Provide a settings panel that stays open for repeated changes, plus one-click pinning of all windows.
+- Provide UTF-8 TXT/CSV page-text backup with explicit loaded-content limits and local ICS conversion for dated calendar exports.
 - Windows 11 only.
 - Personal-use quality bar, not public distribution quality.
 - Generated repository content should remain in English.
